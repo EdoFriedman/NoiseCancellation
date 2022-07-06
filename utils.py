@@ -6,12 +6,12 @@ from matplotlib import pyplot as plt
 import pathlib
 
 
-def create_freq_graph(sound_files_root="LibriSpeech/dev-clean"):  # Data from http://www.openslr.org/12
+def create_freq_graph(sound_files_root="LibriSpeech/dev-clean", file_ext="flac"):  # Data from http://www.openslr.org/12
     """Create a graph showing the frequency distribution of human speech
     We can then use this data to remove any sound with a frequency outside the range we find"""
-    frequencies = np.zeros(2000)
+    frequencies = np.zeros(8000)
     counter = 0
-    for path in glob.iglob(sound_files_root + "/**/*.flac", recursive=True):
+    for path in glob.iglob(f"{sound_files_root}/**/*.{file_ext}", recursive=True):
         audio, sample_rate = soundfile.read(path)
         time_range_length = sample_rate // 20
         if counter >= 500:
@@ -41,7 +41,7 @@ def create_freq_graph(sound_files_root="LibriSpeech/dev-clean"):  # Data from ht
 def create_freq_data(sound_files_root="LibriSpeech/dev-clean"):  # Data from http://www.openslr.org/12
     """Create a graph showing the frequency distribution of human speech
     We can then use this data to remove any sound with a frequency outside the range we find"""
-    frequencies = np.zeros(2000)
+    frequencies = np.zeros(8000)
     counter = 0
     for path in glob.iglob(sound_files_root + "/**/*.flac", recursive=True):
         audio, sample_rate = soundfile.read(path)
@@ -81,18 +81,15 @@ def fft_generator(data, sample_rate, frames_per_second=20):
         yield fft_result, x[i], x[i + 1]
 
 
-# def convert_to_
-#
-def add_noise(main_clip, noise_clip):
-    main_clip.resize(min(main_clip.shape, noise_clip.shape))
-    noise_clip.resize(min(main_clip.shape, noise_clip.shape))
-    return main_clip + noise_clip / np.max(noise_clip) * np.max(main_clip) * 0.5
-
-
-def calculate_variance(data, avg=None):
-    if avg is None:
-        avg = np.mean(data)
-    return np.mean((data - avg) ** 2)
+def is_overtone(freq, frequencies, tol=None):
+    """
+    :param freq: frequency to check
+    :param frequencies: frequencies freq might be an overtone of
+    :param tol: tolerance
+    :return: True if and only if freq is an overtone of any frequency in important_frequencies
+    """
+    tol_arr = frequencies * tol
+    return (np.logical_and(freq % frequencies <= tol_arr, freq // frequencies >= 2)).any()
 
 
 # For guesser
@@ -113,5 +110,6 @@ def create_tone_list():
 
 
 if __name__ == '__main__':
-    # create_freq_data()
-    create_freq_graph()
+    create_freq_data()
+    # create_freq_graph("MS-SNSD/CleanSpeech_training","wav")
+    # create_freq_graph()
