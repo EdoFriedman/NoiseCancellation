@@ -4,7 +4,6 @@ import utils
 from scipy import fft
 from scipy.io import wavfile
 import numpy as np
-from FFT_research.FFT_research import FFTHC
 
 SPEECH_FREQUENCIES = np.sqrt(np.load("speech_frequencies.npy"))
 
@@ -34,8 +33,6 @@ def rate_importance(freq, freq_amp, important_frequencies, amp_variance, removed
     #     weights.append(0.5)
     res = np.average(importance_influencers, weights=weights)
 
-    # if 7000 < freq < 7400:
-    #     print(res > 0.2, freq_amp, importance_influencers, weights)
     return res
 
 
@@ -79,21 +76,16 @@ def remove_noise(file_path):
     # generator = utils.fft_generator(file_path, WINDOWS_PER_SECOND)
     generator = utils.fft_generator_old(data, sample_rate, WINDOWS_PER_SECOND)
     for freq_domain_audio, window_start, window_end in generator:
-        # remove_background_noise_from_window(freq_domain_audio[1:])
+        remove_background_noise_from_window(freq_domain_audio[1:])
         irfft_result = fft.irfft(freq_domain_audio)
         new_data[window_start:window_end] = irfft_result
-    # new_data *= 2 ** 15
     return sample_rate, new_data.astype(np.int16)
 
 
 def main():
-    # audio_file = "Audio Clip With Background Noise.wav"
-    # audio_file = "MS-SNSD/NoisySpeech_training/noisy62_SNRdb_40.0_clnsp62.wav"
     audio_files = ["MS-SNSD/NoisySpeech_training/noisy61_SNRdb_20.0_clnsp61.wav",
                    "MS-SNSD/NoisySpeech_training/noisy62_SNRdb_40.0_clnsp62.wav",
                    "MS-SNSD/NoisySpeech_training/noisy63_SNRdb_40.0_clnsp63.wav"]
-    # audio_file = "MS-SNSD/CleanSpeech_training/clnsp62.wav"
-    # out_audio_file = "Audio Clip (hopefully) Without Background Noise.wav"
     output_dir = "output"
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
