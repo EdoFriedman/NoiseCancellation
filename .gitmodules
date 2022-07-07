@@ -1,3 +1,6 @@
 [submodule "MS-SNSD"]
 	path = MS-SNSD
 	url = https://github.com/microsoft/MS-SNSD
+[submodule "FFT_research"]
+	path = FFT_research
+	url = https://github.com/ItaiGani/FFT_research.git
