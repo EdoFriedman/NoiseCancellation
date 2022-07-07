@@ -4,6 +4,7 @@ import utils
 from scipy import fft
 from scipy.io import wavfile
 import numpy as np
+from FFT_research.FFT_research import FFTHC
 
 SPEECH_FREQUENCIES = np.sqrt(np.load("speech_frequencies.npy"))
 
@@ -18,15 +19,15 @@ def rate_importance(freq, freq_amp, important_frequencies, amp_variance, removed
     Returns a float in (∞,1]
     """
     common_speech_frequency_score = SPEECH_FREQUENCIES[round(freq)] if freq < len(SPEECH_FREQUENCIES) else 0
-    importance_influencers = [freq_amp ** 2 / amp_variance, common_speech_frequency_score]
-    weights = [2, 2]
-    if utils.is_overtone(freq, important_frequencies, 1.e-2):#np.count_nonzero(freq % important_frequencies[:important_frequencies_count]) == important_frequencies_count:
+    importance_influencers = [np.sqrt(freq_amp ** 2 / amp_variance)]#, common_speech_frequency_score]
+    weights = [1]#, 2]
+    if utils.is_overtone(freq, important_frequencies, 1.e-3):#np.count_nonzero(freq % important_frequencies[:important_frequencies_count]) == important_frequencies_count:
         # importance_influencers.append(1)
         # weights.append(2)
         return 1
-    elif utils.is_overtone(freq, removed_frequencies, 0):
-        importance_influencers.append(0)
-        weights.append(1)
+    # elif utils.is_overtone(freq, removed_frequencies, 0):
+    #     importance_influencers.append(0)
+    #     weights.append(1)
     # if last_heavy_coeffs is not None and (
     #         freq in last_heavy_coeffs or freq - WINDOWS_PER_SECOND in last_heavy_coeffs or freq + WINDOWS_PER_SECOND in last_heavy_coeffs):
     #     importance_influencers.append(1)
@@ -53,7 +54,7 @@ def remove_background_noise_from_window(freq_domain_audio):
         amplitude = freq_domain_audio_absolute[freq]
         importance_rating = rate_importance(freq_in_hz, amplitude, important_frequencies[:important_freq_count],
                                             amp_variance, removed_frequencies)
-        if importance_rating < 0.5:
+        if importance_rating < 0.20:
             freq_domain_audio[freq] = 0
             if amplitude > 0.01 * amp_variance:
                 removed_frequencies[removed_freq_count] = freq_in_hz
@@ -75,12 +76,13 @@ def remove_noise(file_path):
     if len(data.shape) == 2:
         data = data[:, 0]
     new_data = np.zeros(data.shape)
-    generator = utils.fft_generator(data, sample_rate, WINDOWS_PER_SECOND)
+    # generator = utils.fft_generator(file_path, WINDOWS_PER_SECOND)
+    generator = utils.fft_generator_old(data, sample_rate, WINDOWS_PER_SECOND)
     for freq_domain_audio, window_start, window_end in generator:
-        remove_background_noise_from_window(freq_domain_audio)
+        # remove_background_noise_from_window(freq_domain_audio[1:])
         irfft_result = fft.irfft(freq_domain_audio)
         new_data[window_start:window_end] = irfft_result
-    new_data *= 2 ** 15
+    # new_data *= 2 ** 15
     return sample_rate, new_data.astype(np.int16)
 
 
@@ -91,7 +93,6 @@ def main():
                    "MS-SNSD/NoisySpeech_training/noisy62_SNRdb_40.0_clnsp62.wav",
                    "MS-SNSD/NoisySpeech_training/noisy63_SNRdb_40.0_clnsp63.wav"]
     # audio_file = "MS-SNSD/CleanSpeech_training/clnsp62.wav"
-    start, end = 0, 10
     # out_audio_file = "Audio Clip (hopefully) Without Background Noise.wav"
     output_dir = "output"
     if not os.path.exists(output_dir):
